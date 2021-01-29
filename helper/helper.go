@@ -21,3 +21,11 @@ func Normalize(text string) string {
 
 	return strings.ToLower(normalizedText)
 }
+
+//NormalizeMapKeys applies the helper.Normalize function to each key in the given map
+func NormalizeMapKeys(denormalizedMap map[string]string) {
+	for key, value := range denormalizedMap {
+		delete(denormalizedMap, key)
+		denormalizedMap[Normalize(key)] = value
+	}
+}
