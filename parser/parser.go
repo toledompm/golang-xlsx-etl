@@ -24,7 +24,7 @@ colType: Excel data type to be applied
 
 colDictionary: map used to translate every cell value contained in the column. **Keys will be normalized**
 
-callback: custom function
+callback: custom function to applied to each cell in a column
 */
 type ColumnParseOptions struct {
 	colType       string
