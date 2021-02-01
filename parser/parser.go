@@ -44,7 +44,7 @@ func readFirstSheet(filePath string) (*xlsx.Sheet, error) {
 	return sheet, nil
 }
 
-func translateHeader(header *xlsx.Row, dict map[string]string) (*xlsx.Row, map[string]int, error) {
+func translateHeader(header *xlsx.Row, dict map[string]string) (map[string]int, error) {
 	columnIndexes := make(map[string]int)
 
 	header.ForEachCell(
@@ -70,7 +70,7 @@ func translateHeader(header *xlsx.Row, dict map[string]string) (*xlsx.Row, map[s
 		},
 	)
 
-	return header, columnIndexes, nil
+	return columnIndexes, nil
 }
 
 //Parse parses a xlsx file located at FilePath based on ParseOptions
