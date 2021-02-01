@@ -24,7 +24,7 @@ colType: Excel data type to be applied
 
 colDictionary: map used to translate every cell value contained in the column. **Keys will be normalized**
 
-callback: custom function
+callback: custom function to applied to each cell in a column
 */
 type ColumnParseOptions struct {
 	colType       string
@@ -44,7 +44,7 @@ func readFirstSheet(filePath string) (*xlsx.Sheet, error) {
 	return sheet, nil
 }
 
-func translateHeader(header *xlsx.Row, dict map[string]string) (*xlsx.Row, map[string]int, error) {
+func translateHeader(header *xlsx.Row, dict map[string]string) (map[string]int, error) {
 	columnIndexes := make(map[string]int)
 
 	header.ForEachCell(
@@ -70,7 +70,7 @@ func translateHeader(header *xlsx.Row, dict map[string]string) (*xlsx.Row, map[s
 		},
 	)
 
-	return header, columnIndexes, nil
+	return columnIndexes, nil
 }
 
 //Parse parses a xlsx file located at FilePath based on ParseOptions
