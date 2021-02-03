@@ -1,6 +1,8 @@
 package parser
 
 import (
+	"fmt"
+
 	"github.com/tealeg/xlsx/v3"
 	"github.com/toledompm/kroton-etl-go/util"
 )
@@ -27,9 +29,23 @@ colDictionary: map used to translate every cell value contained in the column. *
 callback: custom function to applied to each cell in a column
 */
 type ColumnParseOptions struct {
-	colType       string
 	colDictionary map[string]string
-	callback      func()
+	callback      func(*xlsx.Cell) error
+}
+
+func translateCell(cell *xlsx.Cell, dict map[string]string) error {
+	normalizedCellName := util.Normalize(cell.Value)
+
+	newColName, ok := dict[normalizedCellName]
+
+	if !ok {
+		return fmt.Errorf("Key: %s not found in dictionary", normalizedCellName)
+	}
+
+	cell.SetString(
+		newColName,
+	)
+	return nil
 }
 
 func readFirstSheet(filePath string) (*xlsx.Sheet, error) {
@@ -44,33 +60,51 @@ func readFirstSheet(filePath string) (*xlsx.Sheet, error) {
 	return sheet, nil
 }
 
-func translateHeader(header *xlsx.Row, dict map[string]string) (map[string]int, error) {
-	columnIndexes := make(map[string]int)
+func translateHeader(header *xlsx.Row, dict map[string]string) (map[int]string, error) {
+	columnIndexes := make(map[int]string)
 
 	header.ForEachCell(
 		func(cell *xlsx.Cell) error {
-			colName, err := cell.FormattedValue()
+			err := translateCell(cell, dict)
 
 			if err != nil {
 				return err
 			}
 
-			newColName := dict[util.Normalize(colName)]
-
-			if newColName == "" {
-				newColName = colName
-			}
-
-			columnIndexes[newColName], _ = cell.GetCoordinates()
-
-			cell.SetString(
-				newColName,
-			)
+			col, _ := cell.GetCoordinates()
+			columnIndexes[col] = cell.Value
 			return nil
 		},
 	)
 
 	return columnIndexes, nil
+}
+
+func parseRow(
+	row *xlsx.Row,
+	parseOptions map[string]ColumnParseOptions,
+	columnIndex map[int]string,
+) error {
+	row.ForEachCell(func(cell *xlsx.Cell) error {
+		colIndex, _ := cell.GetCoordinates()
+		colName, ok := columnIndex[colIndex]
+
+		if !ok {
+			return fmt.Errorf("No parseOptions for column: %s", colName)
+		}
+
+		colParseOptions := parseOptions[colName]
+
+		err := translateCell(cell, colParseOptions.colDictionary)
+
+		if err != nil {
+			fmt.Println(err)
+		}
+
+		return colParseOptions.callback(cell)
+	})
+
+	return nil
 }
 
 //Parse parses a xlsx file located at FilePath based on ParseOptions
